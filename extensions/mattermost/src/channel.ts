@@ -6,6 +6,7 @@ import {
   formatPairingApproveHint,
   migrateBaseNameToDefaultAccount,
   normalizeAccountId,
+  registerPluginHttpRoute,
   resolveAllowlistProviderRuntimeGroupPolicy,
   resolveDefaultGroupPolicy,
   setAccountEnabledInConfigSection,
@@ -22,14 +23,14 @@ import {
   type ResolvedMattermostAccount,
 } from "./mattermost/accounts.js";
 import { normalizeMattermostBaseUrl } from "./mattermost/client.js";
-import { monitorMattermostProvider } from "./mattermost/monitor.js";
-import { probeMattermost } from "./mattermost/probe.js";
-import { addMattermostReaction, removeMattermostReaction } from "./mattermost/reactions.js";
 import {
   createMattermostClient,
   patchMattermostPost,
   deleteMattermostPost,
 } from "./mattermost/client.js";
+import { monitorMattermostProvider } from "./mattermost/monitor.js";
+import { probeMattermost } from "./mattermost/probe.js";
+import { addMattermostReaction, removeMattermostReaction } from "./mattermost/reactions.js";
 import { sendMessageMattermost } from "./mattermost/send.js";
 import { looksLikeMattermostTargetId, normalizeMattermostMessagingTarget } from "./normalize.js";
 import { mattermostOnboardingAdapter } from "./onboarding.js";
@@ -85,9 +86,7 @@ const mattermostMessageActions: ChannelMessageActionAdapter = {
       const baseUrl = normalizeMattermostBaseUrl(resolved.baseUrl);
       const botToken = resolved.botToken?.trim();
       if (!baseUrl || !botToken) {
-        throw new Error(
-          `Mattermost botToken/baseUrl missing for account "${resolvedAccountId}"`,
-        );
+        throw new Error(`Mattermost botToken/baseUrl missing for account "${resolvedAccountId}"`);
       }
 
       const client = createMattermostClient({ baseUrl, botToken });
@@ -97,9 +96,7 @@ const mattermostMessageActions: ChannelMessageActionAdapter = {
       });
 
       return {
-        content: [
-          { type: "text" as const, text: `Edited post ${messageId}` },
-        ],
+        content: [{ type: "text" as const, text: `Edited post ${messageId}` }],
         details: { postId: updated.id },
       };
     }
@@ -119,18 +116,14 @@ const mattermostMessageActions: ChannelMessageActionAdapter = {
       const baseUrl = normalizeMattermostBaseUrl(resolved.baseUrl);
       const botToken = resolved.botToken?.trim();
       if (!baseUrl || !botToken) {
-        throw new Error(
-          `Mattermost botToken/baseUrl missing for account "${resolvedAccountId}"`,
-        );
+        throw new Error(`Mattermost botToken/baseUrl missing for account "${resolvedAccountId}"`);
       }
 
       const client = createMattermostClient({ baseUrl, botToken });
       await deleteMattermostPost(client, messageId);
 
       return {
-        content: [
-          { type: "text" as const, text: `Deleted post ${messageId}` },
-        ],
+        content: [{ type: "text" as const, text: `Deleted post ${messageId}` }],
         details: {},
       };
     }
@@ -254,6 +247,7 @@ export const mattermostPlugin: ChannelPlugin<ResolvedMattermostAccount> = {
     threads: true,
     media: true,
     nativeCommands: true,
+    blockStreaming: true,
   },
   streaming: {
     blockStreamingCoalesceDefaults: { minChars: 1500, idleMs: 1000 },
