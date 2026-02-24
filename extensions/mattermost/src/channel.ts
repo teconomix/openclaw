@@ -13,6 +13,9 @@ import {
   deleteAccountFromConfigSection,
   migrateBaseNameToDefaultAccount,
   normalizeAccountId,
+  registerPluginHttpRoute,
+  resolveAllowlistProviderRuntimeGroupPolicy,
+  resolveDefaultGroupPolicy,
   setAccountEnabledInConfigSection,
   type ChannelMessageActionAdapter,
   type ChannelMessageActionName,
@@ -113,9 +116,7 @@ const mattermostMessageActions: ChannelMessageActionAdapter = {
       const baseUrl = normalizeMattermostBaseUrl(resolved.baseUrl);
       const botToken = resolved.botToken?.trim();
       if (!baseUrl || !botToken) {
-        throw new Error(
-          `Mattermost botToken/baseUrl missing for account "${resolvedAccountId}"`,
-        );
+        throw new Error(`Mattermost botToken/baseUrl missing for account "${resolvedAccountId}"`);
       }
 
       const client = createMattermostClient({ baseUrl, botToken });
@@ -145,9 +146,7 @@ const mattermostMessageActions: ChannelMessageActionAdapter = {
       const baseUrl = normalizeMattermostBaseUrl(resolved.baseUrl);
       const botToken = resolved.botToken?.trim();
       if (!baseUrl || !botToken) {
-        throw new Error(
-          `Mattermost botToken/baseUrl missing for account "${resolvedAccountId}"`,
-        );
+        throw new Error(`Mattermost botToken/baseUrl missing for account "${resolvedAccountId}"`);
       }
 
       const client = createMattermostClient({ baseUrl, botToken });
@@ -332,6 +331,7 @@ export const mattermostPlugin: ChannelPlugin<ResolvedMattermostAccount> = {
     threads: true,
     media: true,
     nativeCommands: true,
+    blockStreaming: true,
   },
   streaming: {
     blockStreamingCoalesceDefaults: { minChars: 1500, idleMs: 1000 },
