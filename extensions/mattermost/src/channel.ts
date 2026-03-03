@@ -6,7 +6,6 @@ import {
   formatPairingApproveHint,
   migrateBaseNameToDefaultAccount,
   normalizeAccountId,
-  registerPluginHttpRoute,
   resolveAllowlistProviderRuntimeGroupPolicy,
   resolveDefaultGroupPolicy,
   setAccountEnabledInConfigSection,
@@ -22,11 +21,11 @@ import {
   resolveMattermostAccount,
   type ResolvedMattermostAccount,
 } from "./mattermost/accounts.js";
-import { normalizeMattermostBaseUrl } from "./mattermost/client.js";
 import {
   createMattermostClient,
-  patchMattermostPost,
   deleteMattermostPost,
+  normalizeMattermostBaseUrl,
+  patchMattermostPost,
 } from "./mattermost/client.js";
 import { monitorMattermostProvider } from "./mattermost/monitor.js";
 import { probeMattermost } from "./mattermost/probe.js";
@@ -40,20 +39,27 @@ const mattermostMessageActions: ChannelMessageActionAdapter = {
   listActions: ({ cfg }) => {
     const actionsConfig = cfg.channels?.mattermost?.actions as { reactions?: boolean } | undefined;
     const baseReactions = actionsConfig?.reactions;
-    const hasReactionCapableAccount = listMattermostAccountIds(cfg)
+
+    const enabledAccounts = listMattermostAccountIds(cfg)
       .map((accountId) => resolveMattermostAccount({ cfg, accountId }))
       .filter((account) => account.enabled)
-      .filter((account) => Boolean(account.botToken?.trim() && account.baseUrl?.trim()))
-      .some((account) => {
-        const accountActions = account.config.actions as { reactions?: boolean } | undefined;
-        return (accountActions?.reactions ?? baseReactions ?? true) !== false;
-      });
+      .filter((account) => Boolean(account.botToken?.trim() && account.baseUrl?.trim()));
 
-    if (!hasReactionCapableAccount) {
-      return [];
+    const hasReactionCapableAccount = enabledAccounts.some((account) => {
+      const accountActions = account.config.actions as { reactions?: boolean } | undefined;
+      return (accountActions?.reactions ?? baseReactions ?? true) !== false;
+    });
+
+    const hasEditDeleteCapableAccount = enabledAccounts.length > 0;
+
+    const actions: ChannelMessageActionName[] = [];
+    if (hasReactionCapableAccount) {
+      actions.push("react");
     }
-
-    return ["react", "edit", "delete"];
+    if (hasEditDeleteCapableAccount) {
+      actions.push("edit", "delete");
+    }
+    return actions;
   },
   supportsAction: ({ action }) => {
     return action === "react" || action === "edit" || action === "delete";
