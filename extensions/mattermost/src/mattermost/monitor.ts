@@ -1675,7 +1675,7 @@ export async function monitorMattermostProvider(opts: MonitorMattermostOpts = {}
         try {
           const result = await sendMessageMattermost(to, text, {
             accountId: account.accountId,
-            replyToId: threadRootId,
+            replyToId: effectiveReplyToId,
           });
           streamMessageId = result.messageId;
           runtime.log?.(`stream-patch started ${streamMessageId}`);
@@ -1716,7 +1716,7 @@ export async function monitorMattermostProvider(opts: MonitorMattermostOpts = {}
               try {
                 const result = await sendMessageMattermost(to, text, {
                   accountId: account.accountId,
-                  replyToId: threadRootId,
+                  replyToId: effectiveReplyToId,
                 });
                 streamMessageId = result.messageId;
                 runtime.log?.(`stream-patch started ${streamMessageId}`);
@@ -1785,13 +1785,13 @@ export async function monitorMattermostProvider(opts: MonitorMattermostOpts = {}
               }
               await sendMessageMattermost(to, text, {
                 accountId: account.accountId,
-                replyToId: threadRootId,
+                replyToId: effectiveReplyToId,
                 mediaUrl: mediaUrls[0],
               });
               for (const mediaUrl of mediaUrls.slice(1)) {
                 await sendMessageMattermost(to, "", {
                   accountId: account.accountId,
-                  replyToId: threadRootId,
+                  replyToId: effectiveReplyToId,
                   mediaUrl,
                 });
               }
@@ -1802,7 +1802,7 @@ export async function monitorMattermostProvider(opts: MonitorMattermostOpts = {}
             for (const mediaUrl of mediaUrls) {
               await sendMessageMattermost(to, "", {
                 accountId: account.accountId,
-                replyToId: threadRootId,
+                replyToId: effectiveReplyToId,
                 mediaUrl,
               });
             }
@@ -1840,7 +1840,7 @@ export async function monitorMattermostProvider(opts: MonitorMattermostOpts = {}
               }
               await sendMessageMattermost(to, chunk, {
                 accountId: account.accountId,
-                replyToId: threadRootId,
+                replyToId: effectiveReplyToId,
               });
             }
           } else {
@@ -1851,7 +1851,7 @@ export async function monitorMattermostProvider(opts: MonitorMattermostOpts = {}
               await sendMessageMattermost(to, caption, {
                 accountId: account.accountId,
                 mediaUrl,
-                replyToId: threadRootId,
+                replyToId: effectiveReplyToId,
               });
             }
           }
