@@ -187,6 +187,7 @@ Docs: https://docs.openclaw.ai
 - Status/context windows: normalize provider-qualified override cache keys so `/status` resolves the active provider's configured context window even when `models.providers` keys use mixed case or surrounding whitespace. (#36389) Thanks @haoruilee.
 - ACP/main session aliases: canonicalize `main` before ACP session lookup so restarted ACP main sessions rehydrate instead of failing closed with `Session is not ACP-enabled: main`. (#43285, fixes #25692)
 - Agents/embedded runner: recover canonical allowlisted tool names from malformed `toolCallId` and malformed non-blank tool-name variants before dispatch, while failing closed on ambiguous matches. (#34485) thanks @yuweuii.
+- Mattermost/thread routing: keep cleared route threads cleared for non-inbound routed replies instead of reviving stale `origin.threadId` metadata. (#44283) thanks @teconomix
 
 ## 2026.3.8
 
