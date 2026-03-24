@@ -69,6 +69,24 @@ async function getClient(opts: SlackActionClientOpts = {}) {
   return opts.client ?? createSlackWebClient(token);
 }
 
+function resolveUserToken(accountId?: string): string {
+  const cfg = loadConfig();
+  const account = resolveSlackAccount({ cfg, accountId });
+  const token = account.userToken?.trim();
+  if (!token) {
+    throw new Error(
+      "Slack search requires a user token with search:read scope. " +
+        "Configure channels.slack.userToken (or SLACK_USER_TOKEN) in your Slack account settings.",
+    );
+  }
+  return token;
+}
+
+async function getUserClient(opts: SlackActionClientOpts = {}) {
+  const token = opts.token ?? resolveUserToken(opts.accountId);
+  return opts.client ?? createSlackWebClient(token);
+}
+
 async function resolveBotUserId(client: WebClient) {
   const auth = await client.auth.test();
   if (!auth?.user_id) {
@@ -295,20 +313,31 @@ export async function listSlackChannels(
   return { channels };
 }
 
+type SlackSearchMessageMatch = {
+  type?: string;
+  ts?: string;
+  text?: string;
+  user?: string;
+  username?: string;
+  channel?: {
+    id?: string;
+    name?: string;
+  };
+};
+
+/** Shape returned by this module -- matches are already unwrapped from the Slack API envelope. */
 type SlackSearchMessagesResponse = {
-  ok?: boolean;
-  messages?: Array<{
-    type?: string;
-    ts?: string;
-    text?: string;
-    user?: string;
-    username?: string;
-    channel?: {
-      id?: string;
-      name?: string;
-    };
-  }>;
+  messages?: SlackSearchMessageMatch[];
   total?: number;
+};
+
+/** Raw Slack API search.messages envelope shape */
+type SlackSearchMessagesApiResponse = {
+  ok?: boolean;
+  messages?: {
+    matches?: SlackSearchMessageMatch[];
+    total?: number;
+  };
   error?: string;
 };
 
@@ -316,13 +345,16 @@ export async function searchSlackMessages(
   query: string,
   opts: SlackActionClientOpts & { limit?: number } = {},
 ): Promise<SlackSearchMessagesResponse> {
-  const client = await getClient(opts);
+  const client = await getUserClient(opts);
   const limit = opts.limit ?? 20;
   const result = (await client.search.messages({
     query,
     count: limit,
-  })) as SlackSearchMessagesResponse;
-  return result;
+  })) as SlackSearchMessagesApiResponse;
+  return {
+    messages: result.messages?.matches ?? [],
+    total: result.messages?.total,
+  };
 }
 
 export async function pinSlackMessage(
